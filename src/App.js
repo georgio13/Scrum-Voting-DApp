@@ -11,6 +11,7 @@ class App extends Component {
         currentAccount: '',
         manager: '',
         message: '',
+        messageClass: '',
         newManager: '',
         proposalID: '',
         proposals: [],
@@ -21,35 +22,28 @@ class App extends Component {
 
     async componentDidMount(): Promise<void> {
         try {
-            let manager = await voting.methods.manager().call();
-            manager = manager.toLowerCase();
-            let stage = await voting.methods.stage().call();
-            stage = Number(stage);
+            await this.getManager();
+            await this.getStage();
             const proposals = await voting.methods.getProposals().call();
             const balance = await web3.eth.getBalance(voting.options.address);
             this.setState({
                 balance,
-                manager,
                 message: '',
-                proposals,
-                stage
+                proposals
             });
             try {
                 const accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
                 const currentAccount = accounts[0];
-                const voter = await voting.methods.getVoter().call({
-                    from: currentAccount
-                });
                 this.setState({
                     currentAccount,
-                    message: '',
-                    remainingVotes: Number(voter.remainingVotes)
+                    message: ''
                 });
+                await this.getVoter();
             } catch (error) {
-                this.setState({message: 'Metamask has not connected yet'});
+                this.showMessage('Metamask has not connected yet', 'danger');
             }
         } catch (error) {
-            this.setState({message: 'Metamask is not installed'});
+            this.showMessage('Metamask is not installed', 'danger');
         }
         if (!this.eventListenersSet) {
             this.setupEventListeners();
@@ -58,27 +52,56 @@ class App extends Component {
     }
 
     changeOwner = async (): Promise<void> => {
-        this.setState({message: 'Waiting on transaction success...'});
-        await voting.methods.changeOwner(this.state.newManager).send({
-            from: this.state.currentAccount
-        });
-        this.setState({message: 'Changed owner successfully.'});
+        try {
+            this.showInfoMessage();
+            await voting.methods.changeOwner(this.state.newManager).send({
+                from: this.state.currentAccount
+            });
+            this.showSuccessMessage('Owner has changed successfully!');
+        } catch (error) {
+            this.showErrorMessage();
+        }
     };
 
     declareWinner = async (): Promise<void> => {
-        this.setState({message: 'Waiting on transaction success...'});
-        await voting.methods.declareWinner().send({
-            from: this.state.currentAccount
-        });
-        this.setState({message: 'Declare winner done successfully.'});
+        try {
+            this.showInfoMessage();
+            await voting.methods.declareWinner().send({
+                from: this.state.currentAccount
+            });
+            this.showSuccessMessage('Winner declaration completed successfully!');
+        } catch (error) {
+            this.showErrorMessage();
+        }
     };
 
     destroyContract = async (): Promise<void> => {
-        this.setState({message: 'Waiting on transaction success...'});
-        await voting.methods.destroyContract().send({
+        try {
+            this.showInfoMessage();
+            await voting.methods.destroyContract().send({
+                from: this.state.currentAccount
+            });
+            this.showSuccessMessage('Contract has been destroyed!');
+        } catch (error) {
+            this.showErrorMessage();
+        }
+    };
+
+    getManager = async (): Promise<void> => {
+        const manager = await voting.methods.manager().call();
+        this.setState({manager: manager.toLowerCase()});
+    };
+
+    getStage = async (): Promise<void> => {
+        const stage = await voting.methods.stage().call();
+        this.setState({stage: Number(stage)});
+    };
+
+    getVoter = async (): Promise<void> => {
+        const voter = await voting.methods.getVoter().call({
             from: this.state.currentAccount
         });
-        this.setState({message: 'Contract has been destroyed!'});
+        this.setState({remainingVotes: Number(voter.remainingVotes)});
     };
 
     getWinners = async (): Promise<void> => {
@@ -95,20 +118,22 @@ class App extends Component {
     };
 
     reset = async (): Promise<void> => {
-        this.setState({message: 'Waiting on transaction success...'});
-        await voting.methods.reset().send({
-            from: this.state.currentAccount
-        });
-        this.setState({message: 'Reset done successfully.'});
+        try {
+            this.showInfoMessage();
+            await voting.methods.reset().send({
+                from: this.state.currentAccount
+            });
+            this.showSuccessMessage('Reset has completed successfully!');
+        } catch (error) {
+            this.showErrorMessage();
+        }
     };
 
     setupEventListeners(): void {
         window.ethereum.on('accountsChanged', async (accounts): Promise<void> => {
             const currentAccount = accounts[0];
-            const voter = await voting.methods.getVoter().call({
-                from: currentAccount
-            });
-            this.setState({currentAccount, remainingVotes: Number(voter.remainingVotes)});
+            this.setState({currentAccount});
+            await this.getVoter();
         });
 
         voting.events.ContractWithdrawed().on('data', async (data): Promise<void> => {
@@ -118,18 +143,13 @@ class App extends Component {
 
         voting.events.ContractReseted().on('data', async (data): Promise<void> => {
             const proposals = await voting.methods.getProposals().call();
-            let stage = await voting.methods.stage().call();
-            stage = Number(stage);
-            const voter = await voting.methods.getVoter().call({
-                from: this.state.currentAccount
-            });
-            this.setState({proposals, stage, remainingVotes: Number(voter.remainingVotes)});
+            await this.getStage();
+            await this.getVoter();
+            this.setState({proposals});
         });
 
         voting.events.OwnerChanged().on('data', async (data): Promise<void> => {
-            let manager = await voting.methods.manager().call();
-            manager = manager.toLowerCase();
-            this.setState({manager});
+            await this.getManager();
         });
 
         voting.events.VoteInserted().on('data', async (data): Promise<void> => {
@@ -139,30 +159,53 @@ class App extends Component {
         });
 
         voting.events.WinnerDeclared().on('data', async (data): Promise<void> => {
-            let stage = await voting.methods.stage().call();
-            stage = Number(stage);
-            this.setState({stage});
+            await this.getStage();
         });
     }
 
+    showErrorMessage(): void {
+        this.showMessage('An error has occurred.', 'danger');
+    }
+
+    showInfoMessage(): void {
+        this.showMessage('Waiting on transaction success...', 'primary');
+    }
+
+    showMessage(message: string, messageClass: string): void {
+        this.setState({
+            message,
+            messageClass
+        });
+    }
+
+    showSuccessMessage(message: string): void {
+        this.showMessage(message, 'success');
+    }
+
     vote = async (proposalID): Promise<any> => {
-        this.setState({message: 'Waiting on transaction success...'});
-        await voting.methods.vote(Number(proposalID)).send({
-            from: this.state.currentAccount,
-            value: web3.utils.toWei('0.01', 'ether')
-        });
-        const voter = await voting.methods.getVoter().call({
-            from: this.state.currentAccount
-        });
-        this.setState({message: 'Your vote inserted', remainingVotes: Number(voter.remainingVotes)});
+        try {
+            this.showInfoMessage();
+            await voting.methods.vote(Number(proposalID)).send({
+                from: this.state.currentAccount,
+                value: web3.utils.toWei('0.01', 'ether')
+            });
+            await this.getVoter();
+            this.showSuccessMessage('Your vote has inserted successfully!');
+        } catch (error) {
+            this.showErrorMessage();
+        }
     };
 
     withdraw = async (): Promise<void> => {
-        this.setState({message: 'Waiting on transaction success...'});
-        await voting.methods.withdraw().send({
-            from: this.state.currentAccount
-        });
-        this.setState({message: 'Withdraw done successfully.'});
+        try {
+            this.showInfoMessage();
+            await voting.methods.withdraw().send({
+                from: this.state.currentAccount
+            });
+            this.showSuccessMessage('Withdraw done successfully!');
+        } catch (error) {
+            this.showErrorMessage();
+        }
     };
 
     render() {
@@ -170,7 +213,9 @@ class App extends Component {
             <div className='contract-container'>
                 <h1 className='title'>Scrum voting DApp</h1>
 
-                <h1>{this.state.message}</h1>
+                <div className={'alert alert-' + this.state.messageClass} role='alert'>
+                    {this.state.message}
+                </div>
 
                 <div className='proposals'>
                     {this.state.proposals.map(proposal => (
@@ -211,7 +256,8 @@ class App extends Component {
                                    value={this.state.newManager}/>
                             <button className='btn btn-primary'
                                     onClick={(): Promise<void> => this.changeOwner()}
-                                    type='button'>Change Owner
+                                    type='button'>
+                                Change Owner
                             </button>
                         </div>)
                     }
