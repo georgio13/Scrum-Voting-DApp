@@ -24,21 +24,14 @@ class App extends Component {
         try {
             await this.getManager();
             await this.getStage();
-            const proposals = await voting.methods.getProposals().call();
-            const balance = await web3.eth.getBalance(voting.options.address);
-            this.setState({
-                balance,
-                message: '',
-                proposals
-            });
+            await this.getProposals();
+            await this.getBalance();
+            this.setState({message: ''});
             try {
                 const accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
-                const currentAccount = accounts[0];
-                this.setState({
-                    currentAccount,
-                    message: ''
-                });
+                this.changeCurrentAccount(accounts[0]);
                 await this.getVoter();
+                this.setState({message: ''});
             } catch (error) {
                 this.showMessage('Metamask has not connected yet', 'danger');
             }
@@ -49,6 +42,10 @@ class App extends Component {
             this.setupEventListeners();
             this.eventListenersSet = true;
         }
+    }
+
+    changeCurrentAccount(account): void {
+        this.setState({currentAccount: account});
     }
 
     changeOwner = async (): Promise<void> => {
@@ -87,9 +84,19 @@ class App extends Component {
         }
     };
 
+    getBalance = async (): Promise<void> => {
+        const balance = await web3.eth.getBalance(voting.options.address);
+        this.setState({balance: parseFloat(web3.utils.fromWei(balance, 'ether')).toFixed(4)});
+    };
+
     getManager = async (): Promise<void> => {
         const manager = await voting.methods.manager().call();
         this.setState({manager: manager.toLowerCase()});
+    };
+
+    getProposals = async (): Promise<void> => {
+        const proposals = await voting.methods.getProposals().call();
+        this.setState({proposals});
     };
 
     getStage = async (): Promise<void> => {
@@ -131,21 +138,18 @@ class App extends Component {
 
     setupEventListeners(): void {
         window.ethereum.on('accountsChanged', async (accounts): Promise<void> => {
-            const currentAccount = accounts[0];
-            this.setState({currentAccount});
+            this.changeCurrentAccount(accounts[0]);
             await this.getVoter();
         });
 
         voting.events.ContractWithdrawed().on('data', async (data): Promise<void> => {
-            const balance = await web3.eth.getBalance(voting.options.address);
-            this.setState({balance});
+            await this.getBalance();
         });
 
         voting.events.ContractReseted().on('data', async (data): Promise<void> => {
-            const proposals = await voting.methods.getProposals().call();
+            await this.getProposals();
             await this.getStage();
             await this.getVoter();
-            this.setState({proposals});
         });
 
         voting.events.OwnerChanged().on('data', async (data): Promise<void> => {
@@ -153,9 +157,8 @@ class App extends Component {
         });
 
         voting.events.VoteInserted().on('data', async (data): Promise<void> => {
-            const proposals = await voting.methods.getProposals().call();
-            const balance = await web3.eth.getBalance(voting.options.address);
-            this.setState({balance, proposals});
+            await this.getProposals();
+            await this.getBalance();
         });
 
         voting.events.WinnerDeclared().on('data', async (data): Promise<void> => {
@@ -271,7 +274,7 @@ class App extends Component {
 
                 <h4>Contract manager: {this.state.manager}</h4>
 
-                <h4>Balance: {parseFloat(web3.utils.fromWei(this.state.balance, 'ether')).toFixed(4)} ether</h4>
+                <h4>Balance: {this.state.balance} ether</h4>
 
                 {!this.isManager() && (<h4>Remaining votes: {this.state.remainingVotes}</h4>)}
 
