@@ -48,7 +48,7 @@ class App extends Component {
         this.setState({currentAccount: account});
     }
 
-    changeOwner = async (): Promise<void> => {
+    async changeOwner(): Promise<void> {
         try {
             this.showInfoMessage();
             await voting.methods.changeOwner(this.state.newManager).send({
@@ -58,9 +58,9 @@ class App extends Component {
         } catch (error) {
             this.showErrorMessage();
         }
-    };
+    }
 
-    declareWinner = async (): Promise<void> => {
+    async declareWinner(): Promise<void> {
         try {
             this.showInfoMessage();
             await voting.methods.declareWinner().send({
@@ -70,9 +70,9 @@ class App extends Component {
         } catch (error) {
             this.showErrorMessage();
         }
-    };
+    }
 
-    destroyContract = async (): Promise<void> => {
+    async destroyContract(): Promise<void> {
         try {
             this.showInfoMessage();
             await voting.methods.destroyContract().send({
@@ -82,49 +82,49 @@ class App extends Component {
         } catch (error) {
             this.showErrorMessage();
         }
-    };
+    }
 
-    getBalance = async (): Promise<void> => {
+    async getBalance(): Promise<void> {
         const balance = await web3.eth.getBalance(voting.options.address);
         this.setState({balance: parseFloat(web3.utils.fromWei(balance, 'ether')).toFixed(4)});
-    };
+    }
 
-    getManager = async (): Promise<void> => {
+    async getManager(): Promise<void> {
         const manager = await voting.methods.manager().call();
         this.setState({manager: manager.toLowerCase()});
-    };
+    }
 
-    getProposals = async (): Promise<void> => {
+    async getProposals(): Promise<void> {
         const proposals = await voting.methods.getProposals().call();
         this.setState({proposals});
-    };
+    }
 
-    getStage = async (): Promise<void> => {
+    async getStage(): Promise<void> {
         const stage = await voting.methods.stage().call();
         this.setState({stage: Number(stage)});
-    };
+    }
 
-    getVoter = async (): Promise<void> => {
+    async getVoter(): Promise<void> {
         const voter = await voting.methods.getVoter().call({
             from: this.state.currentAccount
         });
         this.setState({remainingVotes: Number(voter.remainingVotes)});
-    };
+    }
 
-    getWinners = async (): Promise<void> => {
+    async getWinners(): Promise<void> {
         const winners = await history.methods.getWinners().call();
         this.setState({winners});
-    };
+    }
 
-    isManager = (): boolean => {
+    isManager(): boolean {
         return this.state.manager === this.state.currentAccount;
-    };
+    }
 
-    isStage = (stage: number): boolean => {
+    isStage(stage: number): boolean {
         return this.state.stage === stage;
-    };
+    }
 
-    reset = async (): Promise<void> => {
+    async reset(): Promise<void> {
         try {
             this.showInfoMessage();
             await voting.methods.reset().send({
@@ -134,7 +134,7 @@ class App extends Component {
         } catch (error) {
             this.showErrorMessage();
         }
-    };
+    }
 
     setupEventListeners(): void {
         window.ethereum.on('accountsChanged', async (accounts): Promise<void> => {
@@ -185,7 +185,7 @@ class App extends Component {
         this.showMessage(message, 'success');
     }
 
-    vote = async (proposalID): Promise<any> => {
+    async vote(proposalID): Promise<any> {
         try {
             this.showInfoMessage();
             await voting.methods.vote(Number(proposalID)).send({
@@ -197,9 +197,9 @@ class App extends Component {
         } catch (error) {
             this.showErrorMessage();
         }
-    };
+    }
 
-    withdraw = async (): Promise<void> => {
+    async withdraw(): Promise<void> {
         try {
             this.showInfoMessage();
             await voting.methods.withdraw().send({
@@ -209,7 +209,7 @@ class App extends Component {
         } catch (error) {
             this.showErrorMessage();
         }
-    };
+    }
 
     render() {
         return (
