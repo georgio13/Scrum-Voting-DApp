@@ -1,11 +1,38 @@
 import web3 from './web3';
 
-const address = '0x9378B6FD286D935f2437Ef1AC4594d78c18987c2';
+const address = '0x2Ca40bAfE346213Ed3d508318c7f4e537Fc05A58';
 
 const abi = [
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newManager",
+				"type": "address"
+			}
+		],
+		"name": "changeOwner",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
-		"name": "revealWinners",
+		"name": "declareWinner",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "destroyContract",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "reset",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -32,20 +59,38 @@ const abi = [
 		"anonymous": false,
 		"inputs": [
 			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "proposal",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "votes",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "votingID",
+						"type": "uint256"
+					}
+				],
 				"indexed": false,
-				"internalType": "uint256",
-				"name": "winningProposalId",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "votingId",
-				"type": "uint256"
+				"internalType": "struct Voting.Winner[]",
+				"name": "winners",
+				"type": "tuple[]"
 			}
 		],
 		"name": "votingCompleted",
 		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "withdraw",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"inputs": [],
@@ -67,11 +112,6 @@ const abi = [
 						"internalType": "string",
 						"name": "title",
 						"type": "string"
-					},
-					{
-						"internalType": "address[]",
-						"name": "voters",
-						"type": "address[]"
 					},
 					{
 						"internalType": "uint256",
@@ -114,6 +154,36 @@ const abi = [
 	},
 	{
 		"inputs": [],
+		"name": "getWinners",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "proposal",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "votes",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "votingID",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Voting.Winner[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "manager",
 		"outputs": [
 			{
@@ -133,12 +203,27 @@ const abi = [
 				"type": "uint256"
 			}
 		],
-		"name": "winners",
+		"name": "proposals",
 		"outputs": [
 			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "imageURL",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "title",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "votes",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -146,11 +231,40 @@ const abi = [
 	},
 	{
 		"inputs": [],
-		"name": "winningProposalId",
+		"name": "stage",
 		"outputs": [
+			{
+				"internalType": "enum Voting.Stage",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
 			{
 				"internalType": "uint256",
 				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "winners",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "proposal",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "votes",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "votingID",
 				"type": "uint256"
 			}
 		],

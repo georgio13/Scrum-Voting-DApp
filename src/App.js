@@ -10,26 +10,39 @@ class App extends Component {
         currentAccount: '',
         manager: '',
         message: '',
+        newManager: '',
         proposalID: '',
         proposals: [],
         remainingVotes: 0,
-        value: ''
+        stage: -1
     };
 
     async componentDidMount() {
         try {
             let manager = await voting.methods.manager().call();
             manager = manager.toLowerCase();
+            let stage = await voting.methods.stage().call();
+            stage = Number(stage);
             const proposals = await voting.methods.getProposals().call();
             const balance = await web3.eth.getBalance(voting.options.address);
-            this.setState({message: '', manager, proposals, balance});
+            this.setState({
+                balance,
+                manager,
+                message: '',
+                proposals,
+                stage
+            });
             try {
                 const accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
                 const currentAccount = accounts[0];
                 const voter = await voting.methods.getVoter().call({
                     from: currentAccount
                 });
-                this.setState({message: '', currentAccount, remainingVotes: Number(voter.remainingVotes)});
+                this.setState({
+                    currentAccount,
+                    message: '',
+                    remainingVotes: Number(voter.remainingVotes)
+                });
             } catch (error) {
                 this.setState({message: 'Metamask has not connected yet'});
             }
@@ -41,6 +54,51 @@ class App extends Component {
             this.eventListenersSet = true;
         }
     }
+
+    changeOwner = async (): Promise<void> => {
+        this.setState({message: 'Waiting on transaction success...'});
+        await voting.methods.changeOwner(this.state.newManager).send({
+            from: this.state.currentAccount
+        });
+        this.setState({message: 'Changed owner successfully.'});
+    };
+
+    declareWinner = async (): Promise<void> => {
+        this.setState({message: 'Waiting on transaction success...'});
+        await voting.methods.declareWinner().send({
+            from: this.state.currentAccount
+        });
+        this.setState({message: 'Declare winner done successfully.'});
+    };
+
+    destroyContract = async (): Promise<void> => {
+        this.setState({message: 'Waiting on transaction success...'});
+        await voting.methods.destroyContract().send({
+            from: this.state.currentAccount
+        });
+        this.setState({message: 'Contract has been destroyed!'});
+    };
+
+    getWinners = async (): Promise<void> => {
+        const winners = await voting.methods.getWinners().call();
+        console.log(winners)
+    };
+
+    isManager = (): boolean => {
+        return this.state.manager === this.state.currentAccount;
+    };
+
+    isStage = (stage: number): boolean => {
+        return this.state.stage === stage;
+    };
+
+    reset = async (): Promise<void> => {
+        this.setState({message: 'Waiting on transaction success...'});
+        await voting.methods.reset().send({
+            from: this.state.currentAccount
+        });
+        this.setState({message: 'Reset done successfully.'});
+    };
 
     setupEventListeners() {
         window.ethereum.on('accountsChanged', async (accounts) => {
@@ -67,7 +125,7 @@ class App extends Component {
         // });
     }
 
-    handleVote = async (proposalID): Promise<any> => {
+    vote = async (proposalID): Promise<any> => {
         this.setState({message: 'Waiting on transaction success...'});
         await voting.methods.vote(Number(proposalID)).send({
             from: this.state.currentAccount,
@@ -80,18 +138,12 @@ class App extends Component {
         this.setState({message: 'Your vote inserted', balance, remainingVotes: Number(voter.remainingVotes)});
     };
 
-    onClick = async () => {
+    withdraw = async (): Promise<void> => {
         this.setState({message: 'Waiting on transaction success...'});
-
-        await voting.methods.pickWinner().send({
+        await voting.methods.withdraw().send({
             from: this.state.currentAccount
         });
-
-        this.setState({message: 'A winner has been picked!'});
-    };
-
-    isManager = (): boolean => {
-        return this.state.manager === this.state.currentAccount;
+        this.setState({message: 'Withdraw done successfully.'});
     };
 
     render() {
@@ -104,23 +156,53 @@ class App extends Component {
                         <div className='proposal'>
                             <h3>{proposal.title}</h3>
                             <img src={proposal.imageURL} alt={proposal.title}/>
-                            {!this.isManager() && (<button onClick={() => this.handleVote(proposal.id)} type="button"
-                                                           className="btn btn-primary">Vote</button>)}
+                            <h5>Votes: {Number(proposal.votes)}</h5>
+                            {!this.isManager() && this.state.remainingVotes > 0 && this.isStage(0) &&
+                                (<button className="btn btn-primary"
+                                         onClick={(): Promise<any> => this.vote(proposal.id)}
+                                         type="button">Vote</button>)}
                         </div>
                     ))}
                 </div>
 
-                <button type="button" className="btn btn-primary">History</button>
+                <button className="btn btn-primary"
+                        onClick={(): Promise<void> => this.getWinners()}
+                        type="button">
+                    History
+                </button>
 
-                <button type="button" className="btn btn-primary">Declare Winner</button>
+                {this.isManager() && this.isStage(0) &&
+                    (<button className="btn btn-primary"
+                             onClick={(): Promise<void> => this.declareWinner()}
+                             type="button">
+                        Declare Winner
+                    </button>)}
 
-                <button type="button" className="btn btn-primary">Withdraw</button>
+                {this.isManager() && (<button className="btn btn-primary"
+                                              onClick={(): Promise<void> => this.withdraw()}
+                                              type="button">Withdraw</button>)}
 
-                <button type="button" className="btn btn-primary">Reset</button>
+                {this.isManager() && this.isStage(1) &&
+                    (<button className="btn btn-primary"
+                             onClick={(): Promise<void> => this.reset()}
+                             type="button">
+                        Reset
+                    </button>)}
 
-                <button type="button" className="btn btn-primary">Change Owner</button>
+                {this.isManager() && this.isStage(1) &&
+                    (<div>
+                        <input onChange={event => this.setState({newManager: event.target.value})}
+                               value={this.state.newManager}/>
+                        <button className="btn btn-primary"
+                                onClick={(): Promise<void> => this.changeOwner()}
+                                type="button">Change Owner
+                        </button>
+                    </div>)
+                }
 
-                <button type="button" className="btn btn-primary">Destroy</button>
+                {this.isManager() && (<button className="btn btn-primary"
+                                              onClick={(): Promise<void> => this.destroyContract()}
+                                              type="button">Destroy</button>)}
 
                 <h4>Connected wallet address: {this.state.currentAccount}</h4>
 
@@ -129,38 +211,6 @@ class App extends Component {
                 <h4>Balance: {parseFloat(web3.utils.fromWei(this.state.balance, 'ether')).toFixed(4)} ether</h4>
 
                 {!this.isManager() && (<h4>Remaining votes: {this.state.remainingVotes}</h4>)}
-
-                {/* <p>
-          This contract is managed by {this.state.manager}. There are currently{' '}
-          {this.state.proposals.length} people entered, competing to win{' '}
-          {web3.utils.fromWei(this.state.balance, 'ether')} ether!
-        </p>
-
-        <hr />
-
-        <form onSubmit={this.onSubmit}>
-          <h4>Want to try your luck? Connected wallet address: {this.state.currentAccount}</h4>
-          <div>
-            <label>Amount of ether to enter</label>
-            <input
-              value={this.state.value}
-              onChange={event => this.setState({ value: event.target.value })}
-            />
-          </div>
-          <button>Enter</button>
-        </form>
-
-        <hr />
-
-        <h4>Ready to pick a winner?</h4>
-        <button onClick={this.onClick}>Pick a winner!</button>
-
-        <hr />
-
-        <h1>{this.state.message}</h1>
-        {this.state.lastWinner &&
-          <h3>Last Winner Address: {this.state.lastWinner}</h3>
-        } */}
             </div>
         );
     }
