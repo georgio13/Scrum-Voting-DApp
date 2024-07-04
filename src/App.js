@@ -156,32 +156,53 @@ class App extends Component {
             this.showMessage('Account changed', MessageClasses.INFO);
         });
 
+        voting.events.ContractDestroyed().on('data', async (data): Promise<void> => {
+            this.setState({
+                balance: '',
+                currentAccount: '',
+                manager: '',
+                proposals: [],
+                remainingVotes: 0,
+                stage: -1
+            });
+            if (!this.isManager()) {
+                this.showMessage('Manager destroyed contract', MessageClasses.INFO);
+            }
+        });
+
         voting.events.ContractWithdrawed().on('data', async (data): Promise<void> => {
             await this.getBalance();
-            this.showMessage('Balance withdraw', MessageClasses.INFO);
+            if (!this.isManager()) {
+                this.showMessage('Manager withdraw balance', MessageClasses.INFO);
+            }
         });
 
         voting.events.ContractReseted().on('data', async (data): Promise<void> => {
             await this.getProposals();
             await this.getStage();
             await this.getVoter();
-            this.showMessage('Contract reseted', MessageClasses.INFO);
+            if (!this.isManager()) {
+                this.showMessage('Manager reset contract', MessageClasses.INFO);
+            }
         });
 
         voting.events.OwnerChanged().on('data', async (data): Promise<void> => {
             await this.getManager();
-            this.showMessage('Owner changed', MessageClasses.INFO);
+            if (!this.isManager()) {
+                this.showMessage('Manager changed owner.', MessageClasses.INFO);
+            }
         });
 
         voting.events.VoteInserted().on('data', async (data): Promise<void> => {
             await this.getProposals();
             await this.getBalance();
-            this.showMessage('Vote inserted', MessageClasses.INFO);
         });
 
         voting.events.WinnerDeclared().on('data', async (data): Promise<void> => {
             await this.getStage();
-            this.showMessage('Winner declared', MessageClasses.INFO);
+            if (!this.isManager()) {
+                this.showMessage('Manager declared winner.', MessageClasses.INFO);
+            }
         });
     }
 
