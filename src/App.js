@@ -1,6 +1,7 @@
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.css';
 import React, {Component} from 'react';
+import history from './history';
 import voting from './voting';
 import web3 from './web3';
 
@@ -80,7 +81,7 @@ class App extends Component {
     };
 
     getWinners = async (): Promise<void> => {
-        const winners = await voting.methods.getWinners().call();
+        const winners = await history.methods.getWinners().call();
         console.log(winners)
     };
 
@@ -100,8 +101,8 @@ class App extends Component {
         this.setState({message: 'Reset done successfully.'});
     };
 
-    setupEventListeners() {
-        window.ethereum.on('accountsChanged', async (accounts) => {
+    setupEventListeners(): void {
+        window.ethereum.on('accountsChanged', async (accounts): Promise<void> => {
             const currentAccount = accounts[0];
             const voter = await voting.methods.getVoter().call({
                 from: currentAccount
@@ -109,20 +110,38 @@ class App extends Component {
             this.setState({currentAccount, remainingVotes: Number(voter.remainingVotes)});
         });
 
-        // voting.events.PlayerEntered().on('data', async (data) => {
-        //   console.log(data.returnValues.player);
-        //   const players = await voting.methods.getPlayers().call();
-        //   const balance = await web3.eth.getBalance(voting.options.address);
-        //   this.setState({ players, balance });
-        // });
+        voting.events.ContractWithdrawed().on('data', async (data): Promise<void> => {
+            const balance = await web3.eth.getBalance(voting.options.address);
+            this.setState({balance});
+        });
 
-        // voting.events.WinnerPicked().on('data', async (data) => {
-        //   console.log(data.returnValues.winner);
-        //   const players = await voting.methods.getPlayers().call();
-        //   const balance = await web3.eth.getBalance(voting.options.address);
-        //   const lastWinner = data.returnValues.winner;
-        //   this.setState({ lastWinner, players, balance });
-        // });
+        voting.events.ContractReseted().on('data', async (data): Promise<void> => {
+            const proposals = await voting.methods.getProposals().call();
+            let stage = await voting.methods.stage().call();
+            stage = Number(stage);
+            const voter = await voting.methods.getVoter().call({
+                from: this.state.currentAccount
+            });
+            this.setState({proposals, stage, remainingVotes: Number(voter.remainingVotes)});
+        });
+
+        voting.events.OwnerChanged().on('data', async (data): Promise<void> => {
+            let manager = await voting.methods.manager().call();
+            manager = manager.toLowerCase();
+            this.setState({manager});
+        });
+
+        voting.events.VoteInserted().on('data', async (data): Promise<void> => {
+            const proposals = await voting.methods.getProposals().call();
+            const balance = await web3.eth.getBalance(voting.options.address);
+            this.setState({balance, proposals});
+        });
+
+        voting.events.WinnerDeclared().on('data', async (data): Promise<void> => {
+            let stage = await voting.methods.stage().call();
+            stage = Number(stage);
+            this.setState({stage});
+        });
     }
 
     vote = async (proposalID): Promise<any> => {
@@ -134,8 +153,7 @@ class App extends Component {
         const voter = await voting.methods.getVoter().call({
             from: this.state.currentAccount
         });
-        const balance = await web3.eth.getBalance(voting.options.address);
-        this.setState({message: 'Your vote inserted', balance, remainingVotes: Number(voter.remainingVotes)});
+        this.setState({message: 'Your vote inserted', remainingVotes: Number(voter.remainingVotes)});
     };
 
     withdraw = async (): Promise<void> => {
@@ -150,7 +168,7 @@ class App extends Component {
         return (
             <div className='contract-container'>
                 <h1 className='title'>Scrum voting DApp</h1>
-
+                <h1>{this.state.message}</h1>
                 <div className='proposals'>
                     {this.state.proposals.map(proposal => (
                         <div className='proposal'>
