@@ -15,10 +15,11 @@ class App extends Component {
         proposalID: '',
         proposals: [],
         remainingVotes: 0,
-        stage: -1
+        stage: -1,
+        winners: []
     };
 
-    async componentDidMount() {
+    async componentDidMount(): Promise<void> {
         try {
             let manager = await voting.methods.manager().call();
             manager = manager.toLowerCase();
@@ -82,7 +83,7 @@ class App extends Component {
 
     getWinners = async (): Promise<void> => {
         const winners = await history.methods.getWinners().call();
-        console.log(winners)
+        this.setState({winners});
     };
 
     isManager = (): boolean => {
@@ -183,12 +184,6 @@ class App extends Component {
                     ))}
                 </div>
 
-                <button className="btn btn-primary"
-                        onClick={(): Promise<void> => this.getWinners()}
-                        type="button">
-                    History
-                </button>
-
                 {this.isManager() && this.isStage(0) &&
                     (<button className="btn btn-primary"
                              onClick={(): Promise<void> => this.declareWinner()}
@@ -229,6 +224,20 @@ class App extends Component {
                 <h4>Balance: {parseFloat(web3.utils.fromWei(this.state.balance, 'ether')).toFixed(4)} ether</h4>
 
                 {!this.isManager() && (<h4>Remaining votes: {this.state.remainingVotes}</h4>)}
+
+                <button className="btn btn-primary"
+                        onClick={(): Promise<void> => this.getWinners()}
+                        type="button">
+                    History
+                </button>
+
+                <ul className="list-group">
+                    {this.state.winners.map(winner => (
+                        <li className="list-group-item">
+                            <b>Voting</b>: {Number(winner.votingID)}, <b>Proposal</b>: {winner.proposal}, <b>Votes</b>: {Number(winner.votes)}
+                        </li>
+                    ))}
+                </ul>
             </div>
         );
     }
