@@ -130,7 +130,7 @@ class App extends Component {
     }
 
     isManager(): boolean {
-        return this.state.manager === this.state.currentAccount;
+        return this.state.manager === this.state.currentAccount && this.state.manager !== '';
     }
 
     isStage(stage: number): boolean {
@@ -159,7 +159,6 @@ class App extends Component {
         voting.events.ContractDestroyed().on('data', async (data): Promise<void> => {
             this.setState({
                 balance: '',
-                currentAccount: '',
                 manager: '',
                 proposals: [],
                 remainingVotes: 0,
@@ -311,12 +310,12 @@ class App extends Component {
                 </div>
 
                 <h4>Connected wallet address: {this.state.currentAccount}</h4>
-
+                <hr/>
                 <h4>Contract manager: {this.state.manager}</h4>
-
+                <hr/>
                 <h4>Balance: {this.state.balance} ether</h4>
-
-                {!this.isManager() && (<h4>Remaining votes: {this.state.remainingVotes}</h4>)}
+                <hr/>
+                {!this.isManager() && (<div><h4>Remaining votes: {this.state.remainingVotes}</h4><hr/></div>)}
 
                 <button className='btn btn-primary'
                         onClick={(): Promise<void> => this.getWinners()}
