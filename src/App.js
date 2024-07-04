@@ -5,7 +5,19 @@ import history from './history';
 import voting from './voting';
 import web3 from './web3';
 
+const MessageClasses = {
+    ERROR: 'danger',
+    INFO: 'primary',
+    SUCCESS: 'success'
+};
+
+const VoteStages = {
+    ACTIVE: 0,
+    COMPLETED: 1
+};
+
 class App extends Component {
+    componentDidMountExecuted = false;
     state = {
         balance: '',
         currentAccount: '',
@@ -21,6 +33,10 @@ class App extends Component {
     };
 
     async componentDidMount(): Promise<void> {
+        if (this.componentDidMountExecuted) {
+            return;
+        }
+        this.componentDidMountExecuted = true;
         try {
             await this.getManager();
             await this.getStage();
@@ -30,17 +46,14 @@ class App extends Component {
             try {
                 const accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
                 this.changeCurrentAccount(accounts[0]);
-                await this.getVoter();
+                await this.getVoter(accounts[0]);
                 this.setState({message: ''});
+                this.setupEventListeners();
             } catch (error) {
-                this.showMessage('Metamask has not connected yet', 'danger');
+                this.showMessage('Metamask has not connected yet', MessageClasses.ERROR);
             }
         } catch (error) {
-            this.showMessage('Metamask is not installed', 'danger');
-        }
-        if (!this.eventListenersSet) {
-            this.setupEventListeners();
-            this.eventListenersSet = true;
+            this.showMessage('Metamask is not installed', MessageClasses.ERROR);
         }
     }
 
@@ -104,9 +117,9 @@ class App extends Component {
         this.setState({stage: Number(stage)});
     }
 
-    async getVoter(): Promise<void> {
+    async getVoter(account?: string): Promise<void> {
         const voter = await voting.methods.getVoter().call({
-            from: this.state.currentAccount
+            from: account ? account : this.state.currentAccount
         });
         this.setState({remainingVotes: Number(voter.remainingVotes)});
     }
@@ -139,39 +152,45 @@ class App extends Component {
     setupEventListeners(): void {
         window.ethereum.on('accountsChanged', async (accounts): Promise<void> => {
             this.changeCurrentAccount(accounts[0]);
-            await this.getVoter();
+            await this.getVoter(accounts[0]);
+            this.showMessage('Account changed', MessageClasses.INFO);
         });
 
         voting.events.ContractWithdrawed().on('data', async (data): Promise<void> => {
             await this.getBalance();
+            this.showMessage('Balance withdraw', MessageClasses.INFO);
         });
 
         voting.events.ContractReseted().on('data', async (data): Promise<void> => {
             await this.getProposals();
             await this.getStage();
             await this.getVoter();
+            this.showMessage('Contract reseted', MessageClasses.INFO);
         });
 
         voting.events.OwnerChanged().on('data', async (data): Promise<void> => {
             await this.getManager();
+            this.showMessage('Owner changed', MessageClasses.INFO);
         });
 
         voting.events.VoteInserted().on('data', async (data): Promise<void> => {
             await this.getProposals();
             await this.getBalance();
+            this.showMessage('Vote inserted', MessageClasses.INFO);
         });
 
         voting.events.WinnerDeclared().on('data', async (data): Promise<void> => {
             await this.getStage();
+            this.showMessage('Winner declared', MessageClasses.INFO);
         });
     }
 
     showErrorMessage(): void {
-        this.showMessage('An error has occurred.', 'danger');
+        this.showMessage('An error has occurred.', MessageClasses.ERROR);
     }
 
     showInfoMessage(): void {
-        this.showMessage('Waiting on transaction success...', 'primary');
+        this.showMessage('Waiting on transaction success...', MessageClasses.INFO);
     }
 
     showMessage(message: string, messageClass: string): void {
@@ -182,7 +201,7 @@ class App extends Component {
     }
 
     showSuccessMessage(message: string): void {
-        this.showMessage(message, 'success');
+        this.showMessage(message, MessageClasses.SUCCESS);
     }
 
     async vote(proposalID): Promise<any> {
@@ -226,8 +245,8 @@ class App extends Component {
                             <h3>{proposal.title}</h3>
                             <img src={proposal.imageURL} alt={proposal.title}/>
                             <h5>Votes: {Number(proposal.votes)}</h5>
-                            {!this.isManager() && this.state.remainingVotes > 0 && this.isStage(0) &&
-                                (<button className='btn btn-primary'
+                            {!this.isManager() && this.state.remainingVotes > 0 && this.isStage(VoteStages.ACTIVE) &&
+                                (<button className='btn btn-outline-primary'
                                          onClick={(): Promise<any> => this.vote(proposal.id)}
                                          type='button'>Vote</button>)}
                         </div>
@@ -235,29 +254,29 @@ class App extends Component {
                 </div>
 
                 <div className='action-buttons'>
-                    {this.isManager() && this.isStage(0) &&
-                        (<button className='btn btn-primary'
+                    {this.isManager() && this.isStage(VoteStages.ACTIVE) &&
+                        (<button className='btn btn-success'
                                  onClick={(): Promise<void> => this.declareWinner()}
                                  type='button'>
                             Declare Winner
                         </button>)}
 
-                    {this.isManager() && (<button className='btn btn-primary'
+                    {this.isManager() && (<button className='btn btn-dark'
                                                   onClick={(): Promise<void> => this.withdraw()}
                                                   type='button'>Withdraw</button>)}
 
-                    {this.isManager() && this.isStage(1) &&
-                        (<button className='btn btn-primary'
+                    {this.isManager() && this.isStage(VoteStages.COMPLETED) &&
+                        (<button className='btn btn-info'
                                  onClick={(): Promise<void> => this.reset()}
                                  type='button'>
                             Reset
                         </button>)}
 
-                    {this.isManager() && this.isStage(1) &&
+                    {this.isManager() && this.isStage(VoteStages.COMPLETED) &&
                         (<div>
                             <input onChange={event => this.setState({newManager: event.target.value})}
                                    value={this.state.newManager}/>
-                            <button className='btn btn-primary'
+                            <button className='btn btn-warning'
                                     onClick={(): Promise<void> => this.changeOwner()}
                                     type='button'>
                                 Change Owner
@@ -265,7 +284,7 @@ class App extends Component {
                         </div>)
                     }
 
-                    {this.isManager() && (<button className='btn btn-primary'
+                    {this.isManager() && (<button className='btn btn-danger'
                                                   onClick={(): Promise<void> => this.destroyContract()}
                                                   type='button'>Destroy</button>)}
                 </div>
