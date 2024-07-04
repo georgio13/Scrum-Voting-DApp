@@ -169,7 +169,9 @@ class App extends Component {
         return (
             <div className='contract-container'>
                 <h1 className='title'>Scrum voting DApp</h1>
+
                 <h1>{this.state.message}</h1>
+
                 <div className='proposals'>
                     {this.state.proposals.map(proposal => (
                         <div className='proposal'>
@@ -177,45 +179,47 @@ class App extends Component {
                             <img src={proposal.imageURL} alt={proposal.title}/>
                             <h5>Votes: {Number(proposal.votes)}</h5>
                             {!this.isManager() && this.state.remainingVotes > 0 && this.isStage(0) &&
-                                (<button className="btn btn-primary"
+                                (<button className='btn btn-primary'
                                          onClick={(): Promise<any> => this.vote(proposal.id)}
-                                         type="button">Vote</button>)}
+                                         type='button'>Vote</button>)}
                         </div>
                     ))}
                 </div>
 
-                {this.isManager() && this.isStage(0) &&
-                    (<button className="btn btn-primary"
-                             onClick={(): Promise<void> => this.declareWinner()}
-                             type="button">
-                        Declare Winner
-                    </button>)}
+                <div className='action-buttons'>
+                    {this.isManager() && this.isStage(0) &&
+                        (<button className='btn btn-primary'
+                                 onClick={(): Promise<void> => this.declareWinner()}
+                                 type='button'>
+                            Declare Winner
+                        </button>)}
 
-                {this.isManager() && (<button className="btn btn-primary"
-                                              onClick={(): Promise<void> => this.withdraw()}
-                                              type="button">Withdraw</button>)}
+                    {this.isManager() && (<button className='btn btn-primary'
+                                                  onClick={(): Promise<void> => this.withdraw()}
+                                                  type='button'>Withdraw</button>)}
 
-                {this.isManager() && this.isStage(1) &&
-                    (<button className="btn btn-primary"
-                             onClick={(): Promise<void> => this.reset()}
-                             type="button">
-                        Reset
-                    </button>)}
+                    {this.isManager() && this.isStage(1) &&
+                        (<button className='btn btn-primary'
+                                 onClick={(): Promise<void> => this.reset()}
+                                 type='button'>
+                            Reset
+                        </button>)}
 
-                {this.isManager() && this.isStage(1) &&
-                    (<div>
-                        <input onChange={event => this.setState({newManager: event.target.value})}
-                               value={this.state.newManager}/>
-                        <button className="btn btn-primary"
-                                onClick={(): Promise<void> => this.changeOwner()}
-                                type="button">Change Owner
-                        </button>
-                    </div>)
-                }
+                    {this.isManager() && this.isStage(1) &&
+                        (<div>
+                            <input onChange={event => this.setState({newManager: event.target.value})}
+                                   value={this.state.newManager}/>
+                            <button className='btn btn-primary'
+                                    onClick={(): Promise<void> => this.changeOwner()}
+                                    type='button'>Change Owner
+                            </button>
+                        </div>)
+                    }
 
-                {this.isManager() && (<button className="btn btn-primary"
-                                              onClick={(): Promise<void> => this.destroyContract()}
-                                              type="button">Destroy</button>)}
+                    {this.isManager() && (<button className='btn btn-primary'
+                                                  onClick={(): Promise<void> => this.destroyContract()}
+                                                  type='button'>Destroy</button>)}
+                </div>
 
                 <h4>Connected wallet address: {this.state.currentAccount}</h4>
 
@@ -225,15 +229,15 @@ class App extends Component {
 
                 {!this.isManager() && (<h4>Remaining votes: {this.state.remainingVotes}</h4>)}
 
-                <button className="btn btn-primary"
+                <button className='btn btn-primary'
                         onClick={(): Promise<void> => this.getWinners()}
-                        type="button">
+                        type='button'>
                     History
                 </button>
 
-                <ul className="list-group">
+                <ul className='list-group'>
                     {this.state.winners.map(winner => (
-                        <li className="list-group-item">
+                        <li className='list-group-item'>
                             <b>Voting</b>: {Number(winner.votingID)}, <b>Proposal</b>: {winner.proposal}, <b>Votes</b>: {Number(winner.votes)}
                         </li>
                     ))}
