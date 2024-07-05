@@ -13,6 +13,10 @@
   width: 1000px;
 }
 
+.margin-top {
+  margin-top: 1rem;
+}
+
 .proposal {
   align-items: center;
   border-radius: 8px;

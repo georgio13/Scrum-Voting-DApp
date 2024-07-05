@@ -294,13 +294,18 @@ class App extends Component {
 
                     {this.isManager() && this.isStage(VoteStages.COMPLETED) &&
                         (<div>
-                            <input onChange={event => this.setState({newManager: event.target.value})}
-                                   value={this.state.newManager}/>
-                            <button className='btn btn-warning'
-                                    onClick={(): Promise<void> => this.changeOwner()}
-                                    type='button'>
-                                Change Owner
-                            </button>
+                            <div className='input-group'>
+                                <input className='form-control'
+                                       onChange={event => this.setState({newManager: event.target.value})}
+                                       placeholder='Address'
+                                       type='text'
+                                       value={this.state.newManager}/>
+                                <button className='btn btn-warning'
+                                        onClick={(): Promise<void> => this.changeOwner()}
+                                        type='button'>
+                                    Change Owner
+                                </button>
+                            </div>
                         </div>)
                     }
 
@@ -323,7 +328,7 @@ class App extends Component {
                     History
                 </button>
 
-                <ul className='list-group'>
+                <ul className='list-group margin-top20'>
                     {this.state.winners.map(winner => (
                         <li className='list-group-item'>
                             <b>Voting</b>: {Number(winner.votingID)}, <b>Proposal</b>: {winner.proposal}, <b>Votes</b>: {Number(winner.votes)}
