@@ -9,8 +9,12 @@
 
 .contract-container {
   margin: auto;
+  max-width: 1000px;
   padding: 40px;
-  width: 1000px;
+}
+
+img {
+  width: 100%;
 }
 
 .margin-top {
@@ -40,4 +44,15 @@
 .title {
   margin-bottom: 40px;
   text-align: center;
+}
+
+@media screen and (max-width: 480px) {
+  .action-buttons,
+  .proposals {
+    flex-direction: column;
+  }
+
+  .address {
+    font-size: 10px;
+  }
 }

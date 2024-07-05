@@ -37,6 +37,7 @@ class App extends Component {
             return;
         }
         this.componentDidMountExecuted = true;
+        document.title = 'Voting DApp';
         try {
             await this.getManager();
             await this.getStage();
@@ -318,9 +319,9 @@ class App extends Component {
                                                   type='button'>Destroy</button>)}
                 </div>
 
-                <h4>Connected wallet address: {this.state.currentAccount}</h4>
+                <h4 className='address'>Connected wallet address: {this.state.currentAccount}</h4>
                 <hr/>
-                <h4>Contract manager: {this.state.manager}</h4>
+                <h4 className='address'>Contract manager: {this.state.manager}</h4>
                 <hr/>
                 <h4>Balance: {this.state.balance} ether</h4>
                 <hr/>
