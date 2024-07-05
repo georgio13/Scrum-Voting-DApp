@@ -151,9 +151,13 @@ class App extends Component {
 
     setupEventListeners(): void {
         window.ethereum.on('accountsChanged', async (accounts): Promise<void> => {
-            this.changeCurrentAccount(accounts[0]);
-            await this.getVoter(accounts[0]);
-            this.showMessage('Account changed', MessageClasses.INFO);
+            try {
+                this.changeCurrentAccount(accounts[0]);
+                await this.getVoter(accounts[0]);
+                this.showMessage('Account changed', MessageClasses.INFO);
+            } catch (error) {
+                this.showMessage('You have to change network', MessageClasses.ERROR);
+            }
         });
 
         voting.events.ContractDestroyed().on('data', async (data): Promise<void> => {
