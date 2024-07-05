@@ -297,27 +297,27 @@ class App extends Component {
                             Reset
                         </button>)}
 
-                    {this.isManager() && this.isStage(VoteStages.COMPLETED) &&
-                        (<div>
-                            <div className='input-group'>
-                                <input className='form-control'
-                                       onChange={event => this.setState({newManager: event.target.value})}
-                                       placeholder='Address'
-                                       type='text'
-                                       value={this.state.newManager}/>
-                                <button className='btn btn-warning'
-                                        onClick={(): Promise<void> => this.changeOwner()}
-                                        type='button'>
-                                    Change Owner
-                                </button>
-                            </div>
-                        </div>)
-                    }
-
                     {this.isManager() && (<button className='btn btn-danger'
                                                   onClick={(): Promise<void> => this.destroyContract()}
                                                   type='button'>Destroy</button>)}
                 </div>
+
+                {this.isManager() && this.isStage(VoteStages.COMPLETED) &&
+                    (<div className='margin-bottom'>
+                        <div className='input-group'>
+                            <input className='form-control'
+                                   onChange={event => this.setState({newManager: event.target.value})}
+                                   placeholder='Address'
+                                   type='text'
+                                   value={this.state.newManager}/>
+                            <button className='btn btn-warning'
+                                    onClick={(): Promise<void> => this.changeOwner()}
+                                    type='button'>
+                                Change Owner
+                            </button>
+                        </div>
+                    </div>)
+                }
 
                 <h4 className='address'>Connected wallet address: {this.state.currentAccount}</h4>
                 <hr/>
