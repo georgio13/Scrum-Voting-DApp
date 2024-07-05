@@ -328,7 +328,7 @@ class App extends Component {
                     History
                 </button>
 
-                <ul className='list-group margin-top20'>
+                <ul className='list-group margin-top'>
                     {this.state.winners.map(winner => (
                         <li className='list-group-item'>
                             <b>Voting</b>: {Number(winner.votingID)}, <b>Proposal</b>: {winner.proposal}, <b>Votes</b>: {Number(winner.votes)}
